@@ -567,6 +567,7 @@ class FunctionCall(BaseAgent):
                                     }
                                 )
                             )
+                    continue
                 if has_content:
                     content = message_obj.content.strip()
                     result = await self._handle_content_response(
