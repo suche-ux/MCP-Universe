@@ -271,8 +271,13 @@ class BenchmarkRunner(metaclass=AutodocABCMeta):
                             callbacks=callbacks
                         )
                         result = response.get_response_str()
+                        self._logger.debug("Agent response type: %s", type(result).__name__)
+                        self._logger.debug("Agent response length: %s", len(result) if isinstance(result, str) else "N/A")
+                        self._logger.debug("Agent response (first 500 chars): %s", repr(result[:500] if isinstance(result, str) else result))
+                        self._logger.info("Agent response is empty: %s", not result or result.strip() == "")
                     except Exception as e:
                         result = str(e)
+                        self._logger.error("Agent execution failed with error: %s", result)
                     evaluation_results = await task.evaluate(result)
 
                     # Save the evaluation results

@@ -13,9 +13,12 @@ from pydantic_core import from_json
 from jinja2 import Environment, meta
 from mcpuniverse.common.misc import AutodocABCMeta
 from mcpuniverse.common.context import Context
+from mcpuniverse.common.logger import get_logger
 from .functions import EVALUATION_FUNCTIONS, COMPARISON_FUNCTIONS, FunctionResult
 
 load_dotenv()
+
+_logger = get_logger("Evaluator")
 
 
 class EvaluatorConfig(BaseModel):
@@ -129,6 +132,11 @@ class Evaluator(metaclass=AutodocABCMeta):
             raise NotImplementedError(f"Cannot extract function results from type `{type(_res)}`")
 
         try:
+            _logger.debug("Evaluator starting evaluation with func=%s", self._config.func)
+            _logger.debug("Input response type: %s, length: %s", 
+                         type(x).__name__, len(x) if isinstance(x, str) else "N/A")
+            _logger.debug("Input response (first 500 chars): %s", 
+                         repr(x[:500] if isinstance(x, str) else x))
             results = _extract_results(await self.execute(x))
             op, value, op_args = self._config.op, self._config.value, self._config.op_args
             for r in results:
@@ -143,8 +151,14 @@ class Evaluator(metaclass=AutodocABCMeta):
             return EvaluationResult(config=self._config, response=x, passed=True)
 
         except json.JSONDecodeError as e:
+            _logger.error("JSON decoding error in evaluator func=%s", self._config.func)
+            _logger.error("Response that failed to parse (first 1000 chars): %s", 
+                         repr(x[:1000] if isinstance(x, str) else x))
+            _logger.error("Response length: %s", len(x) if isinstance(x, str) else "N/A")
             return EvaluationResult(
-                config=self._config, response=x, passed=False, reason="JSON decoding error", error=str(e))
+                config=self._config, response=x, passed=False, 
+                reason=f"JSON decoding error (response length={len(x) if isinstance(x, str) else 'N/A'}, first 100 chars={repr(x[:100]) if isinstance(x, str) else x})", 
+                error=str(e))
         except Exception as e:
             return EvaluationResult(
                 config=self._config, response=x, passed=False, reason="Execution error",
