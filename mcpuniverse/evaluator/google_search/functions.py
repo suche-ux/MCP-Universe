@@ -44,7 +44,7 @@ correct: Answer 'yes' if extracted_final_answer matches the [correct_answer] giv
 
 def google_search__call_gpt(
         prompt: str,
-        model: str = "gpt-4.1",
+        model: str = "judge-llm",
         temperature: float = 0.0,
         **kwargs
 ) -> str:
