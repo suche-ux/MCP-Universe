@@ -171,7 +171,8 @@ class BenchmarkRunner(metaclass=AutodocABCMeta):
             components: Optional[Dict[str, BaseLLM | Executor]] = None,
             store_folder: str = "",
             overwrite: bool = True,
-            callbacks: Optional[List[BaseCallback]] = None
+            callbacks: Optional[List[BaseCallback]] = None,
+            max_tasks: Optional[int] = None
     ) -> List[BenchmarkResult]:
         """
         Run specified benchmarks.
@@ -183,7 +184,18 @@ class BenchmarkRunner(metaclass=AutodocABCMeta):
             store_folder (str): The folder path for storing evaluation results.
             overwrite (bool): Whether to overwrite existing evaluation results.
             callbacks (List[BaseCallback], optional): Callback functions.
+            max_tasks (int, optional): Maximum number of tasks to run per benchmark.
+                Defaults to BENCHMARK_MAX_TASKS env var, or all tasks if not set.
         """
+        # Check environment variable for max_tasks if not provided
+        if max_tasks is None:
+            env_max_tasks = os.environ.get("BENCHMARK_MAX_TASKS")
+            if env_max_tasks is not None:
+                try:
+                    max_tasks = int(env_max_tasks)
+                    self._logger.info("Using BENCHMARK_MAX_TASKS=%d from environment", max_tasks)
+                except ValueError:
+                    self._logger.warning("Invalid BENCHMARK_MAX_TASKS value: %s", env_max_tasks)
         if mcp_manager is None:
             mcp_manager = MCPManager(context=self._context)
         workflow = WorkflowBuilder(mcp_manager=mcp_manager, config=self._agent_configs)
@@ -203,12 +215,20 @@ class BenchmarkRunner(metaclass=AutodocABCMeta):
             ))
 
             task_results, task_trace_ids = {}, {}
-            for idx, task_path in enumerate(benchmark.tasks):
+            tasks_to_run = benchmark.tasks
+            if max_tasks is not None and max_tasks > 0:
+                tasks_to_run = benchmark.tasks[:max_tasks]
+                if len(benchmark.tasks) > max_tasks:
+                    self._logger.info(
+                        "Limiting tasks to %d of %d (max_tasks=%d)",
+                        len(tasks_to_run), len(benchmark.tasks), max_tasks
+                    )
+            for idx, task_path in enumerate(tasks_to_run):
                 async with AsyncExitStack():
                     send_message(callbacks, message=CallbackMessage(
                         source="benchmark_runner",
                         type=MessageType.PROGRESS,
-                        data=f"Running task: {task_path} ({idx + 1}/{len(benchmark.tasks)})"
+                        data=f"Running task: {task_path} ({idx + 1}/{len(tasks_to_run)})"
                     ))
                     send_message(callbacks, message=CallbackMessage(
                         source="benchmark_runner",
