@@ -8,8 +8,8 @@ spec:
 ---
 kind: agent
 spec:
-  name: FunctionCall-agent
-  type: function_call
+  name: ReAct-agent
+  type: react
   config:
     llm: llm-1
     instruction: You are an agent for financial analysis. If you need to calculate the result, you can use the calculator tool.
@@ -23,7 +23,7 @@ spec:
 kind: benchmark
 spec:
   description: Test agent for yfinance tasks.
-  agent: FunctionCall-agent
+  agent: ReAct-agent
   tasks:
     - test/financial_analysis/yfinance_task_0001.json
     - test/financial_analysis/yfinance_task_0002.json

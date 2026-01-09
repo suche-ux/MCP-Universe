@@ -1,16 +1,15 @@
 kind: llm
 spec:
   name: llm-1
-  type: openrouter
+  type: openai
   config:
-    model_name: GPTOSS120B_OR
-    reasoning: high
+    model_name: agent-llm
 
 ---
 kind: agent
 spec:
-  name: HarmonyReAct-agent
-  type: harmony_react
+  name: ReAct-agent
+  type: react
   config:
     llm: llm-1
     instruction: You are an agent for web searching. If you don't have enough information to answer the question, you can use the google-search tool. If you want to obtain the information with a specific URL, you can use the fetch tool.
@@ -21,7 +20,7 @@ spec:
 kind: benchmark
 spec:
   description: Test agent for google search tasks.
-  agent: HarmonyReAct-agent
+  agent: ReAct-agent
   tasks:
     - test/web_search/info_search_task_0001.json
     - test/web_search/info_search_task_0002.json
