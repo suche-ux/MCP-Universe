@@ -6,6 +6,7 @@ implementing various LLM models. It includes abstract methods and utility
 functions for generating content, handling messages, and managing configurations.
 """
 # pylint: disable=unused-argument,broad-exception-caught
+import os
 import asyncio
 from abc import abstractmethod
 from typing import Any, List, Dict
@@ -219,7 +220,8 @@ class BaseLLM(ExportConfigMixin, metaclass=ComponentABCMeta):
         """
         retries = kwargs.pop("retries", 3)
         retry_delay = kwargs.pop("retry_delay", 5)
-        timeout = kwargs.pop("timeout", 900)  # 15 minutes
+        default_timeout = int(os.environ.get("OPENAI_API_TIMEOUT_SECONDS", 900))
+        timeout = kwargs.pop("timeout", default_timeout)
 
         tracer = tracer if tracer else Tracer()
         
