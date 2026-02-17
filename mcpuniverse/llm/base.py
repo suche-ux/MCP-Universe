@@ -8,6 +8,7 @@ functions for generating content, handling messages, and managing configurations
 # pylint: disable=unused-argument,broad-exception-caught
 import os
 import asyncio
+import logging
 from abc import abstractmethod
 from typing import Any, List, Dict
 from pydantic import BaseModel
@@ -23,6 +24,8 @@ from mcpuniverse.callbacks.base import (
     send_message
 )
 from mcpuniverse.common.context import Context
+
+logging.getLogger("BaseLLM").setLevel(logging.DEBUG)
 
 
 class BaseLLM(ExportConfigMixin, metaclass=ComponentABCMeta):
@@ -218,9 +221,10 @@ class BaseLLM(ExportConfigMixin, metaclass=ComponentABCMeta):
         Returns:
             Any: The generated content or model response.
         """
+        # Retry "generate" atmost 3 times. Each "generate" call has internal retry logic.
         retries = kwargs.pop("retries", 3)
-        retry_delay = kwargs.pop("retry_delay", 5)
-        default_timeout = int(os.environ.get("OPENAI_API_TIMEOUT_SECONDS", 900))
+        retry_delay = kwargs.pop("retry_delay", 60)
+        default_timeout = int(os.environ.get("OPENAI_API_TIMEOUT_SECONDS", 43800))
         timeout = kwargs.pop("timeout", default_timeout)
 
         tracer = tracer if tracer else Tracer()

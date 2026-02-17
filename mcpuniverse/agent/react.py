@@ -7,6 +7,7 @@ This module contains the ReAct agent class and its configuration, based on the p
 # pylint: disable=broad-exception-caught
 import os
 import json
+import logging
 from typing import Optional, Union, Dict, List
 from collections import OrderedDict
 from dataclasses import dataclass
@@ -27,6 +28,8 @@ from .utils import build_system_prompt
 from .types import AgentResponse
 
 DEFAULT_CONFIG_FOLDER = os.path.join(os.path.dirname(os.path.realpath(__file__)), "configs")
+
+logging.getLogger("ReAct").setLevel(logging.DEBUG)
 
 
 @dataclass

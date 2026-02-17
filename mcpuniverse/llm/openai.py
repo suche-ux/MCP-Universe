@@ -8,7 +8,7 @@ import logging
 from dataclasses import dataclass
 from typing import Dict, Union, Optional, Type, List
 from openai import OpenAI
-from openai import RateLimitError, APIError, APITimeoutError
+from openai import RateLimitError, APIError, APITimeoutError, InternalServerError
 from dotenv import load_dotenv
 from pydantic import BaseModel as PydanticBaseModel
 
@@ -17,6 +17,8 @@ from mcpuniverse.common.context import Context
 from .base import BaseLLM
 
 load_dotenv()
+
+logging.getLogger("OpenAIModel").setLevel(logging.DEBUG)
 
 
 @dataclass
@@ -81,9 +83,9 @@ class OpenAIModel(BaseLLM):
                 defining the structure of the desired output. If None, generates
                 free-form text.
             **kwargs: Additional keyword arguments including:
-                - max_retries (int): Maximum number of retry attempts (default: 5)
-                - base_delay (float): Base delay in seconds for exponential backoff (default: 10.0)
-                - timeout (int): Request timeout in seconds (default: 60)
+                - max_retries (int): Maximum number of retry attempts (default: 720)
+                - base_delay (float): Delay in seconds between retries, linear backoff (default: 60.0)
+                - timeout (int): Request timeout in seconds (default: 600)
 
         Returns:
             Union[str, PydanticBaseModel, None]: Generated content as a string
@@ -91,14 +93,15 @@ class OpenAIModel(BaseLLM):
                 response_format is provided, or None if parsing structured output fails.
                 Returns None if all retry attempts fail or non-retryable errors occur.
         """
-        max_retries = kwargs.get("max_retries", 5)
-        base_delay = kwargs.get("base_delay", 10.0)
+        max_retries = kwargs.get("max_retries", 480)
+        base_delay = kwargs.get("base_delay", 60.0)
         env_timeout = os.getenv("OPENAI_API_TIMEOUT_SECONDS")
         if env_timeout is not None:
             timeout = int(env_timeout)
             self.logger.info("[OpenAI] Using OPENAI_API_TIMEOUT_SECONDS=%d from environment", timeout)
         else:
-            timeout = int(kwargs.get("timeout", 60))
+            # Set a long timeout for each request so that the model server has sufficient time to respond.
+            timeout = int(kwargs.get("timeout", 900))
             self.logger.debug("[OpenAI] Using default timeout=%d", timeout)
 
         for attempt in range(max_retries + 1):
@@ -177,15 +180,15 @@ class OpenAIModel(BaseLLM):
                                  attempt + 1, max_retries + 1, type(parsed).__name__)
                 return parsed
 
-            except (RateLimitError, APIError, APITimeoutError) as e:
+            except (RateLimitError, APIError, APITimeoutError, InternalServerError, ConnectionError) as e:
                 if attempt == max_retries:
                     # Last attempt failed, return None instead of raising
                     self.logger.error("[OpenAI] All %d attempts failed. Last error: %s", max_retries + 1, e)
                     self.logger.error("[OpenAI] Returning None - this will cause JSON decode errors downstream!")
                     return None
 
-                # Calculate delay with exponential backoff
-                delay = base_delay * (2 ** attempt)
+                # Linear backoff: constant delay between retries
+                delay = base_delay
                 self.logger.warning("[OpenAI Attempt %d/%d] Failed with error: %s. Retrying in %.1f seconds...",
                            attempt + 1, max_retries + 1, e, delay)
                 time.sleep(delay)
