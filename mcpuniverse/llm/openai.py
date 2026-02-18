@@ -93,7 +93,10 @@ class OpenAIModel(BaseLLM):
                 response_format is provided, or None if parsing structured output fails.
                 Returns None if all retry attempts fail or non-retryable errors occur.
         """
-        max_retries = kwargs.get("max_retries", 60)
+        # Retry up to 240 times with 60 second delay between retries. That's a minimum of 4 hours.
+        # In base.py, we set to timeout this method after 4 hours.
+        # With this setup, this method will keep running for 4 hours for retryable errors.
+        max_retries = kwargs.get("max_retries", 240)
         base_delay = kwargs.get("base_delay", 60.0)
         env_timeout = os.getenv("OPENAI_API_TIMEOUT_SECONDS")
         if env_timeout is not None:

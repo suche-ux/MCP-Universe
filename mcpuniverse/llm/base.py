@@ -221,8 +221,8 @@ class BaseLLM(ExportConfigMixin, metaclass=ComponentABCMeta):
         Returns:
             Any: The generated content or model response.
         """
-        # Retry "generate" atmost 3 times. Each "generate" call has internal retry logic.
-        retries = kwargs.pop("retries", 3)
+        # Retry "generate" atmost 5 times. Each "generate" call has internal retry logic.
+        retries = kwargs.pop("retries", 5)
         retry_delay = kwargs.pop("retry_delay", 60)
         # Each "generate" call can run up to 12 hours.
         default_timeout = int(os.environ.get("OPENAI_API_TIMEOUT_SECONDS", 14600)) # 4 hours
