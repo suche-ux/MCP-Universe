@@ -72,9 +72,5 @@ spec:
     - test/web_search/info_search_task_0048.json
     - test/web_search/info_search_task_0049.json
     - test/web_search/info_search_task_0050.json
-    - test/multi_server/multi-server_task_google_search_notion_0001.json
-    - test/multi_server/multi-server_task_google_search_notion_0002.json
-    - test/multi_server/multi-server_task_google_search_notion_0003.json
-    - test/multi_server/multi-server_task_google_search_notion_0004.json
-    - test/multi_server/multi-server_task_google_search_notion_0005.json
+
     

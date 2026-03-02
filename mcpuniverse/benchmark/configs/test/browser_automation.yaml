@@ -56,9 +56,4 @@ spec:
     - test/browser_automation/playwright_booking_task_0002.json
     - test/browser_automation/playwright_booking_task_0003.json
     - test/browser_automation/playwright_booking_task_0004.json
-    - test/multi_server/multi-server_task_playwright_notion_0001.json
-    - test/multi_server/multi-server_task_playwright_notion_0002.json
-    - test/multi_server/multi-server_task_playwright_notion_0003.json
-    - test/multi_server/multi-server_task_playwright_notion_0004.json
-    - test/multi_server/multi-server_task_playwright_notion_0005.json
     
